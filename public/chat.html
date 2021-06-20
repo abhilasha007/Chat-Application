@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Chat App</title>
+        <link rel="icon" href="img/mp.ico">
+        <link rel="stylesheet" href="./css/styles.css">
+    </head>
+    <body>
+        <div class="chat">
+            <div class="chat__sidebar">
+            </div>
+            <div class="chat__main">
+                <div id="display-messages" class="chat__messages"> </div>
+
+                <div class="compose">
+                    <form id="m-form">
+                        <input type="text" name="messageInput" placeholder="Write message" />
+                        <button type="submit">Send</button>
+                    </form>
+                    <button id="send-location">Send Location</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <script id="message-template" type="text/html">
+            <div class="message">
+                <p>
+                    <span class="message__name"> User Name </span>
+                    <span class="message__meta"> {{createdAt}} </span>
+                </p>
+                <p> {{message}} </p>
+            </div>
+        </script>
+        <script id="location-template" type="text/html">
+            <div>
+                <p>
+                    <span class="message__name"> User Name </span>
+                    <span class="message__meta"> {{createdAt}} </span>
+                </p>
+                <p> <a href={{link}} target='_blank'>This is my location</a> </p>
+            </div>
+        </script>
+
+        <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.min.js" type="text/javascript"></script>
+        <script src="https://unpkg.com/mustache@latest"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.10.1/qs.min.js"> </script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="./js/chat.js"></script>
+    </body>
+</html>
