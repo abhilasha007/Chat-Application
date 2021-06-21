@@ -4,6 +4,7 @@ const express = require('express')
 const socketio = require('socket.io')
 const Filter = require('bad-words')
 const { generateMessage, generateLocationMessage } = require('./utils/messages')
+const { addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users');
 
 const app = express()
 const server = http.createServer(app)
@@ -17,34 +18,44 @@ app.use(express.static(publicPath))
 // when a client connects
 io.on('connection', (socket) => {
     console.log('New Websocket connection')
-
-    // Sending message to connected client
-    socket.emit('message', generateMessage('Welcome!'))
-    socket.broadcast.emit('message', generateMessage('A new user has joined!')) 
+    
+    socket.on('join', ({username, room}, callback) => {
+        const {error, user} = addUser({ id:socket.id, username, room })
+        if(error) {
+            return callback(error)
+        }
+        socket.join(user.room)
+        socket.emit('message', generateMessage('Welcome!'))
+        socket.broadcast.to(user.room).emit('message', generateMessage(`${username} has joined!`)) 
+        callback()
+    })
 
     // Recieving message from client
     socket.on('sendMessage', (msg, callback) => {
+        const user = getUser(socket.id)
         const filter = new Filter()
-
         if(filter.isProfane(msg)) {
             return callback('Dont use bad words!')
         }
-
-        //sending message to every client
-        io.emit('message', generateMessage(msg))
+        //sending message to all clients
+        io.to(user.room).emit('message', generateMessage(msg))
         callback()
     })
     
     // Recieving location from client
     socket.on('sendLocation', ({latitude, longitude}, callback)=>{
         //sending location message to every client
-        io.emit('locationMessage', generateLocationMessage(`https://www.google.co.in/maps?q=${latitude},${longitude}`))
+        const user = getUser(socket.id)
+        io.to(user.room).emit('locationMessage', generateLocationMessage(`https://www.google.co.in/maps?q=${latitude},${longitude}`))
         callback()
     })
 
     // When a client disconnects
-    socket.on('disconnect', ()=>{
-        io.emit('message', generateMessage('A user has left!'))
+    socket.on('disconnect', () => {
+        const user = removeUser(socket.id)
+        if(user) {
+            io.to(user.room).emit('message', generateMessage(`${user.username} has left the chat.`))
+        }
     })
 })
 

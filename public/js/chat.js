@@ -11,6 +11,9 @@ const $messages = document.querySelector("#display-messages")
 const messageTemplate = document.querySelector("#message-template").innerHTML
 const locationMessageTemplate = document.querySelector("#location-template").innerHTML
 
+//Options
+const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix : true })
+
 // Recieving message from server
 socket.on('message', ({text, createdAt})=>{
     console.log(text)
@@ -65,4 +68,11 @@ $locationButton.addEventListener('click', ()=>{
             console.log('Location shared!');
         })
     })
+})
+
+socket.emit('join', { username, room }, (error)=>{
+    if(error) {
+        alert(error)
+        location.href = '/'
+    }
 })
