@@ -19,14 +19,19 @@ app.use(express.static(publicPath))
 io.on('connection', (socket) => {
     console.log('New Websocket connection')
     
+    // When a client joins a room
     socket.on('join', ({username, room}, callback) => {
         const {error, user} = addUser({ id:socket.id, username, room })
         if(error) {
             return callback(error)
         }
         socket.join(user.room)
-        socket.emit('message', generateMessage('Welcome!'))
-        socket.broadcast.to(user.room).emit('message', generateMessage(`${username} has joined!`)) 
+        socket.emit('message', generateMessage('Admin', 'Welcome!'))
+        socket.broadcast.to(user.room).emit('message', generateMessage('Admin',`${username} has joined!`))
+        io.to(user.room).emit('roomData', {
+            room: user.room,
+            users: getUsersInRoom(user.room)
+        })
         callback()
     })
 
@@ -37,16 +42,14 @@ io.on('connection', (socket) => {
         if(filter.isProfane(msg)) {
             return callback('Dont use bad words!')
         }
-        //sending message to all clients
-        io.to(user.room).emit('message', generateMessage(msg))
+        io.to(user.room).emit('message', generateMessage(user.username, msg))
         callback()
     })
     
     // Recieving location from client
     socket.on('sendLocation', ({latitude, longitude}, callback)=>{
-        //sending location message to every client
         const user = getUser(socket.id)
-        io.to(user.room).emit('locationMessage', generateLocationMessage(`https://www.google.co.in/maps?q=${latitude},${longitude}`))
+        io.to(user.room).emit('locationMessage', generateLocationMessage(user.username ,`https://www.google.co.in/maps?q=${latitude},${longitude}`))
         callback()
     })
 
@@ -54,7 +57,11 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const user = removeUser(socket.id)
         if(user) {
-            io.to(user.room).emit('message', generateMessage(`${user.username} has left the chat.`))
+            io.to(user.room).emit('message', generateMessage('Admin',`${user.username} has left the chat.`))
+            io.to(user.room).emit('roomData', {
+                room: user.room,
+                users: getUsersInRoom(user.room)
+            })
         }
     })
 })
